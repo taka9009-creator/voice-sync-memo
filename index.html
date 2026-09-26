@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoiceSync Memo - 録音×同時文字起こしスマートノート</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- ヘッダー -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">🎙️</div>
+        <div>
+          <h1 class="brand-title">VoiceSync Memo</h1>
+          <p class="brand-subtitle">録音 × リアルタイム文字起こし同期ノート</p>
+        </div>
+      </div>
+      <div class="header-badges">
+        <span class="badge" id="browser-support-badge">ブラウザ確認中...</span>
+        <button id="theme-toggle-btn" class="icon-btn" title="テーマ切り替え" aria-label="テーマ切り替え">🌙</button>
+      </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="main-layout">
+      <!-- 左ペイン: コントロール＆プレイヤー -->
+      <section class="control-panel card">
+        <div class="recording-hero">
+          <!-- 録音ステータス表示 -->
+          <div class="timer-display" id="timer-display">00:00:00</div>
+          <div class="status-indicator-container">
+            <span class="status-dot" id="status-dot"></span>
+            <span class="status-text" id="status-text">待機中（準備完了）</span>
+          </div>
+
+          <!-- 音量メーター -->
+          <div class="vu-meter-container" title="マイク入力音量">
+            <div class="vu-meter-bar" id="vu-meter-bar"></div>
+          </div>
+
+          <!-- メイン録音ボタン (44px以上確保) -->
+          <div class="main-actions">
+            <button id="record-toggle-btn" class="primary-btn record-btn">
+              <span class="btn-icon" id="record-btn-icon">⏺</span>
+              <span id="record-btn-text">録音＆文字起こし開始</span>
+            </button>
+          </div>
+
+          <!-- 録音中クイックアクション -->
+          <div class="quick-actions" id="quick-actions" style="display: none;">
+            <p class="section-label">クイックピン留め</p>
+            <div class="pin-buttons">
+              <button class="pin-btn pin-star" data-pin-type="important">⭐ 重要</button>
+              <button class="pin-btn pin-idea" data-pin-type="idea">💡 アイデア</button>
+              <button class="pin-btn pin-todo" data-pin-type="todo">✅ ToDo</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 再生プレイヤー (録音停止後・履歴選択時に表示) -->
+        <div class="playback-section" id="playback-section" style="display: none;">
+          <h3 class="section-title">🔊 音声プレイヤー</h3>
+          <audio id="audio-player" controls preload="metadata" class="native-audio-player"></audio>
+          <div class="playback-speed-controls">
+            <span class="sub-label">再生速度:</span>
+            <button class="speed-btn" data-speed="1.0">1.0x</button>
+            <button class="speed-btn" data-speed="1.25">1.25x</button>
+            <button class="speed-btn" data-speed="1.5">1.5x</button>
+            <button class="speed-btn" data-speed="2.0">2.0x</button>
+          </div>
+          <p class="playback-tip">💡 下の文字起こしテキストをクリックすると、その発言位置から再生できます！</p>
+        </div>
+
+        <!-- エクスポートエリア -->
+        <div class="export-section" id="export-section" style="display: none;">
+          <h3 class="section-title">💾 保存・書き出し</h3>
+          <div class="export-buttons">
+            <button id="download-audio-btn" class="secondary-btn">🎵 音声DL (.webm)</button>
+            <button id="download-text-btn" class="secondary-btn">📝 テキストDL (.md)</button>
+            <button id="copy-text-btn" class="secondary-btn">📋 クリップボードにコピー</button>
+          </div>
+        </div>
+
+        <!-- 過去の録音履歴 -->
+        <div class="history-section">
+          <div class="history-header">
+            <h3 class="section-title">📂 保存済みセッション</h3>
+            <button id="clear-history-btn" class="text-btn danger-text">全削除</button>
+          </div>
+          <div class="history-list" id="history-list">
+            <p class="empty-state">保存された録音はありません</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 右ペイン: リアルタイム文字起こしストリーム -->
+      <section class="transcript-panel card">
+        <div class="transcript-header">
+          <div class="header-left">
+            <h2 class="panel-title">📝 リアルタイム文字起こし</h2>
+            <span class="transcript-count" id="segment-count">0 件の発話</span>
+          </div>
+          <div class="transcript-tools">
+            <label class="auto-scroll-toggle">
+              <input type="checkbox" id="autoscroll-checkbox" checked>
+              <span>自動スクロール</span>
+            </label>
+            <button id="clear-current-transcript-btn" class="secondary-btn small-btn" title="表示中の文字起こしをクリア">クリア</button>
+          </div>
+        </div>
+
+        <!-- 文字起こしタイムライン -->
+        <div class="transcript-feed" id="transcript-feed" tabindex="0" role="region" aria-label="文字起こしタイムライン">
+          <div class="placeholder-message" id="feed-placeholder">
+            <div class="placeholder-icon">💬</div>
+            <p>「録音＆文字起こし開始」を押すと、話した言葉がここにリアルタイムで記録されます。</p>
+            <p class="placeholder-sub">※ マイクのアクセスを許可してください</p>
+          </div>
+        </div>
+
+        <!-- 現在認識中のプレビュー（リアルタイム） -->
+        <div class="interim-preview" id="interim-preview" style="display: none;">
+          <span class="interim-indicator">🎙️ 認識中:</span>
+          <span class="interim-text" id="interim-text">...</span>
+        </div>
+      </section>
+    </main>
+
+    <!-- 通知トースト -->
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
