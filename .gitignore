@@ -1,0 +1,11 @@
+# 一時ファイル・ログ
+*.log
+tunnel_url.txt
+term_*.json
+terms_to_register.json
+
+# OS・エディタ関連
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
